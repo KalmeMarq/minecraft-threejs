@@ -1,10 +1,5 @@
 node_modules
 trash
 blocks-atlas.png
-src
-package.json
 package-lock.json
 main.js.LICENSE.txt
-gitignore
-tsconfig.json
-webpack.config.js
