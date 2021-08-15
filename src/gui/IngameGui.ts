@@ -1,5 +1,6 @@
-import { pixiloader, scaleW, scaleH, blockSelected, inventory, createText } from ".."
+import { pixiloader, scaleW, scaleH, blockSelected, inventory } from ".."
 import * as PIXI from 'pixi.js'
+import Helpers from "../util/Helpers"
 
 export default class IngameGui {
   public container: PIXI.Container
@@ -32,7 +33,7 @@ export default class IngameGui {
         icon.position.x = scaleW / 2 - 91 + (i * 20) + 3
         icon.position.y = scaleH - 19
 
-        let msg = createText(slot.count.toString())
+        let msg = Helpers.createText(slot.count.toString())
         msg.position.x = scaleW / 2 - 91 + (i * 20) + 21
         msg.position.y = scaleH - 11
         msg.anchor.set(1, 0)
@@ -45,7 +46,7 @@ export default class IngameGui {
 
     this.container.addChild(this.selectedSprite)
 
-    this.itemSelected = createText(inventory[blockSelected - 1]?.item.block.name ?? '')
+    this.itemSelected = Helpers.createText(inventory[blockSelected - 1]?.item.block.name ?? '')
     this.itemSelected.position.x = scaleW / 2 - this.itemSelected.width / 2
     this.itemSelected.position.y = scaleH - 40
     this.container.addChild(this.itemSelected)
@@ -68,7 +69,7 @@ export default class IngameGui {
         icon.position.x = scaleW / 2 - 91 + (i * 20) + 3
         icon.position.y = scaleH - 19
 
-        let msg = createText(slot.count.toString())
+        let msg = Helpers.createText(slot.count.toString())
         msg.position.x = scaleW / 2 - 91 + (i * 20) + 21
         msg.position.y = scaleH - 11
         msg.anchor.set(1, 0)

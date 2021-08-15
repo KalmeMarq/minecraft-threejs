@@ -1,5 +1,6 @@
 import { Graphics } from "pixi.js";
-import { createText, scaleH, scaleW } from "..";
+import { scaleH, scaleW } from "..";
+import Helpers from "../util/Helpers";
 import GuiScreen from "./GuiScreen";
 
 export default class LoadingScreen extends GuiScreen {
@@ -10,7 +11,7 @@ export default class LoadingScreen extends GuiScreen {
     bg.endFill() 
 
     let dots = '...'
-    let txt = createText('Loading Assets' + dots)
+    let txt = Helpers.createText('Loading Assets' + dots)
     txt.position.set(scaleW / 2 - txt.width / 2, scaleH / 2 - txt.height)
 
     this.container.addChild(bg)

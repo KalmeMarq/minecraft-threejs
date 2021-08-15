@@ -1,3 +1,4 @@
+import { Text } from "pixi.js"
 import BlockAtlas from "../BlockAtlas"
 import { IFinalModel, IModel } from "./types"
 
@@ -23,6 +24,22 @@ export default class Helpers {
         model.elements = parent!.elements
       }
     }
+  }
+
+  static createText(text: string, color?: number) {
+    let t = new Text(text, {
+      fontFamily: 'MC',
+      fontSize: 40,
+      fill: color ?? 'white',
+      dropShadow: true,
+      letterSpacing: 2,
+      dropShadowAngle: Math.PI/4,
+      strokeThickness: 0,
+      dropShadowDistance: 9,
+      dropShadowColor: 0x333333
+    })
+    t.scale.set(0.2, 0.2)
+    return t
   }
 
   static generateFinalModelV2(name: string, blockAtlas: BlockAtlas, allBlocks: Map<string, IModel>) {
@@ -65,7 +82,7 @@ export default class Helpers {
           cullface: value.cullface ?? false
         }
 
-        console.log(tex, blockAtlas.blocksUVInfo)
+        // console.log(tex, blockAtlas.blocksUVInfo)
         
         let t = blockAtlas.blocksUVInfo.get(tex)
         if(!t) throw new Error(tex + ' not found')

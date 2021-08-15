@@ -9,16 +9,15 @@ import Items from './world/Items'
 import ItemStack from './world/ItemStack'
 import PointerLockControls from './util/PointerControlsLock'
 import SoundPlayer from './sound/SoundPlayer'
-import { IModel, IFinalModel, ISoundDefinitions } from './util/types'
+import { IModel, IFinalModel, ISoundDefinitions, IStats } from './util/types'
 import VoxelWorld from './world/VoxelWorld'
 import * as PIXI from 'pixi.js'
 import { Graphics } from 'pixi.js'
-import Button from './gui/Button'
 import Slot from './gui/Slot'
 import GuiScreen from './gui/GuiScreen'
 import IngameMenuScreen from './gui/IngameMenuScreen'
-import LoadingScreen from './gui/LoadingScreen'
 import IngameGui from './gui/IngameGui'
+import DebugOverlay from './gui/DebugOverlay'
 
 export let blocksModelsNew = new Map<number, IFinalModel>()
 
@@ -26,48 +25,34 @@ export let scene: THREE.Scene
 export let world: VoxelWorld
 export let renderer: THREE.WebGLRenderer
 export let camera: THREE.Camera
-
+export let controls: PointerLockControls 
 let xPos = 0
 let yPos = 0
+
+let gui: IngameGui | null = null
+let screen: GuiScreen | null = null
 
 window.addEventListener('mousemove', (e) => {
   xPos = e.clientX / 3
   yPos = e.clientY / 3
 })
 
-const color = 0xffffff;
-const intensity = 0.9;
-const light = new THREE.HemisphereLight(color, 1, intensity);
+window.addEventListener('mousedown', (e) => {
+  if(screen) { screen.mouseClicked(xPos, yPos) }
+})
+
+export let fps = 0
+export const light = new THREE.HemisphereLight(0xffffff, 1, 0.9);
 
 export const pixiRenderer = PIXI.autoDetectRenderer({ width: window.innerWidth, height: window.innerHeight, backgroundAlpha: 0.0 })
 export const pixiRoot = new PIXI.Container()
 export const pixiloader = new PIXI.Loader()
 
 let texture: any
-export let stats: { placed: { [key: string]: { item: BlockItem, count: number } }, broken: { [key: string]: { item: BlockItem, count: number } } } = {
-  placed: {
-
-  },
-  broken: {
-
-  }
+export let stats: IStats = {
+  placed: {},
+  broken: {}
 } 
-
-export function createText(text: string, color?: number) {
-  let t = new PIXI.Text(text, {
-    fontFamily: 'MC',
-    fontSize: 40,
-    fill: color ?? 'white',
-    dropShadow: true,
-    letterSpacing: 2,
-    dropShadowAngle: Math.PI/4,
-    strokeThickness: 0,
-    dropShadowDistance: 9,
-    dropShadowColor: 0x333333
-  })
-  t.scale.set(0.2, 0.2)
-  return t
-}
 
 export let scaleW = window.innerWidth / 3
 export let scaleH = window.innerHeight / 3
@@ -108,14 +93,10 @@ function updateChunkGeometry(x: number, z: number) {
   const geometry = mesh ? mesh.geometry : new THREE.BufferGeometry();
   
   const {positions, normals, uvs, indices, colors} = world.generateGeometryDataForChunk(x, z);
-  const positionNumComponents = 3;
-  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), positionNumComponents));
-  const normalNumComponents = 3;
-  geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), normalNumComponents));
-  const colorNumComponents = 3;
+  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
   geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
-  const uvNumComponents = 2;
-  geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), uvNumComponents));
+  geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
   geometry.setIndex(indices);
   geometry.computeBoundingSphere();
 
@@ -128,8 +109,6 @@ function updateChunkGeometry(x: number, z: number) {
   }
 } 
 
-let gui: IngameGui | null = null
-let screen: GuiScreen | null = null
 export function setScreen(scrn: null | GuiScreen) {
   if(screen) {
     pixiRoot.removeChild(screen.container)
@@ -173,13 +152,14 @@ export function resetWorld() {
   camera.position.z = 14
 }
 
+export let blocks: string[] 
+
 ;(async() => {
   let imgs: string[] = await (await fetch('assets/textures.json')).json()
 
   PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST
   PIXI.settings.RESOLUTION = window.devicePixelRatio
   PIXI.settings.ROUND_PIXELS = false;
-
 
   pixiRoot.scale.set(3, 3)
 
@@ -199,45 +179,6 @@ export function resetWorld() {
       resolve()
     })
   })
-
- 
-
-
-  let debugOverlay = new PIXI.Container()
-  let infos = [
-    'Press F3 to Open/Close',
-    'Press Q to remove one ofthe item',
-    'Press Ctrl + Q to remove an item',
-    'Press R to go back to spawn',
-    'Hold F to show inventory',
-    'Use the mouse wheel to change selected item'
-  ]
-  let debugTexts = [
-    ...infos
-  ]
-  function addDebugTexts() {
-    debugOverlay.removeChildren()
-    debugTexts.forEach((t, i) => {
-      let tt = new PIXI.Container()
-  
-      let txt = createText(t)
-      tt.addChild(txt)
-  
-      let dbgBg = new PIXI.Graphics()
-      dbgBg.beginFill(0x999999, 0.30)
-      dbgBg.drawRect(0, 0, tt.width, tt.height)
-      dbgBg.endFill()
-  
-      if(t !== '') tt.addChildAt(dbgBg, 0)
-      tt.position.x = 1 
-      tt.position.y = tt.height * i + 1
-      txt.position.x = 1
-      txt.position.y = 1
-  
-      debugOverlay.addChild(tt)
-    })
-  }
-  addDebugTexts()
 
   class InventoryScreen extends GuiScreen {
     public prevScreen: GuiScreen | null
@@ -260,51 +201,24 @@ export function resetWorld() {
 
       items.forEach((el: BlockItem, i) => {
         if(el !== null && el !== undefined) {
-          // let item = new PIXI.Container()
-          // let icon = new PIXI.Sprite(pixiloader.resources[el.icon].texture)
-
-          // item.addChild(icon)
-          // item.position.set(, 0
-          //   + 
-          // )
 
           this.addButton(new Slot(scaleW - w + ((i % 9) * 18), (Math.floor(i / 9) * 18), 18, 18, el, () => {
             inventory[blockSelected - 1] = new ItemStack(el, 64)
             updateUIInv()
           }))
-
-          // this.container.addChild(item)
         }
       })
     }
   }
 
   function updateUI() {
-    if(gui) {
-      gui.updateUI()
-    }
-    
-    if(screen) {
-      screen.updateUI(xPos, yPos)
-    }
+    if(gui) { gui.updateUI() }
+    if(screen) { screen.updateUI(xPos, yPos) }
   }
 
-  window.addEventListener('mousedown', (e) => {
-    xPos = e.clientX / 3
-    yPos = e.clientY / 3
-
-    if(screen) {
-      screen.mouseClicked(xPos, yPos)
-    }
-  })
-
-
-
-  pixiRoot.addChild(debugOverlay)
   gui = new IngameGui()
-  // if(gui) pixiRoot.addChild(gui.container)
+  if(gui) pixiRoot.addChild(gui.container)
   setScreen(new IngameMenuScreen())
-  // setScreen(new LoadingScreen())
 
   let sinvUI = false
   window.addEventListener('keydown', (e) => {
@@ -356,7 +270,7 @@ export function resetWorld() {
   let blocksModelsRaw = new Map<string, IModel>()
   let modelsFile = await (await fetch('assets/models.json')).json()
   let templateModels = modelsFile.template_models
-  let blocks: string[] = modelsFile.models
+  blocks = modelsFile.models
 
   /* Get block atlas */
   const loader = new THREE.TextureLoader();
@@ -440,7 +354,7 @@ export function resetWorld() {
     if(e.key === 'F3') {
       e.preventDefault()
       sA = !sA
-      debugOverlay.visible = !debugOverlay.visible
+      debugOverlay.container.visible = !debugOverlay.container.visible
     }
   })
 
@@ -459,85 +373,12 @@ export function resetWorld() {
   renderer.domElement.style.pointerEvents = 'none'
   document.body.prepend(renderer.domElement)
 
-  /* Inv Test */
-
-  
-  // let invUI = document.getElementById('inventory') as HTMLDivElement
-
-  // invUI.addEventListener('click', (e) => {
-  //   e.preventDefault()
-  //   e.stopPropagation()
-  // })
-
-
-
-  // invUI.innerHTML = ''
-  // Object.values(Items).forEach((el: BlockItem) => {
-  //   if(el !== undefined) {
-  //     let btn = document.createElement('button')
-  //     let img = document.createElement('img')
-  //     img.src = el.icon
-  //     btn.addEventListener('click', (e) => {
-  //       console.log('sss');
-        
-  //       inventory[blockSelected - 1] = new ItemStack(el, 64)
-  //       updateUIInv()
-  //     })
-  //     btn.appendChild(img)
-  //     invUI.appendChild(btn)
-  //   }
-  // })
 
   function updateUIInv() {
     if(gui) {
       gui.updateInventory()
     }
-    // hotbarUI.innerHTML = ''
-
-    // inventory.forEach((item, i) => {
-    // /*   let el = document.createElement('li')
-    //   if(item) {
-    //     el.innerText = `Slot ${i + 1} ${item.count}x ${item.item.block.name}`
-    //     let img = document.createElement('img')
-    //     img.src = item.item.icon
-    //     el.prepend(img)
-    //   } else {
-    //     el.innerText = `Slot ${i + 1} 0x empty`
-    //   }
-
-    //   if(blockSelected - 1 === i) {
-    //     el.className = 'seld'
-    //   }
-      
-    //   invUI.appendChild(el) */
-
-    //   let el1 = document.createElement('div')
-    //   el1.className = 'slot'
-
-    //   if(item) {
-    //     let span = document.createElement('span')
-    //     span.innerText = `${item.count}`
-    //     let img = document.createElement('img')
-    //     img.src = item.item.icon
-    //     el1.prepend(img)
-    //     el1.prepend(span)
-    //   } else {
-        
-    //   }
-
-    //   if(blockSelected - 1 === i) {
-    //     el1.classList.add('seld')
-    //     if(item?.item) {
-    //       if(selectedUI) selectedUI.innerText = item.item.block.name ?? ''
-          
-    //     } else {
-    //       if(selectedUI) selectedUI.innerText = ''
-    //     }
-
-    //   }
-
-    //   hotbarUI.appendChild(el1)
-    // })
+  
   }
 
   updateUIInv()
@@ -553,12 +394,15 @@ export function resetWorld() {
   camera.position.y = 7
   camera.position.z = 14
 
-  let controls = new PointerLockControls(camera, document.body)
+  controls = new PointerLockControls(camera, document.body)
   document.body.addEventListener("click", () => {
     if(screen === null) {
       controls.lock()
     }
   })
+
+  let debugOverlay = new DebugOverlay()
+  pixiRoot.addChildAt(debugOverlay.container, 0)
 
   let speed = 0.25
   let keys: {[key: string]: number} = {}
@@ -605,56 +449,6 @@ export function resetWorld() {
 
 
   var lastLoop = Date.now();
-  let fps = 0
-
-
-  setInterval(() => {
-    if(sA) {
-      let cx = camera.position.x.toFixed(3)
-    let cy = camera.position.y.toFixed(3)
-    let cz = camera.position.z.toFixed(3)
-
-    let z = controls.getDirection().z
-    let m = controls.getDirection().x
-    let direction = ''
-    if(m <= 0.65 && m >= -0.75) {
-      if(z < 0) {
-        direction = 'south'
-      } else {
-        direction = 'north'
-      }
-    } else {
-      if(z < 0) {
-        direction = 'west'
-      } else {
-        direction = 'east'
-      }
-    }
-
-    let additTexts = [
-      '',
-      `FPS: ${Math.floor(fps)}`,
-      `XYZ: ${(cx)}, ${(cy)}, ${(cz)}`,
-      `Block: ${Math.floor(camera.position.x)}, ${Math.floor(camera.position.y)}, ${Math.floor(camera.position.z)}`,
-      `Facing: ${direction}`,
-      `Light: ${light.intensity * 15}`,
-    ]
-
-    debugTexts = [
-      ...infos,
-      ...additTexts
-    ]
-
-    if(world.lookingBlock !== null) {
-      debugTexts.push('')
-      debugTexts.push(`Looking at block: ${world.lookingBlock[0]}, ${world.lookingBlock[1]}, ${world.lookingBlock[2]}`)
-      debugTexts.push(`Targeted Block: ${blocks[world.lookingBlock[3] - 1]} (${world.lookingBlock[3]})`)
-    }
-
-      addDebugTexts()
-    }
-  }, 500)
-
   let velFor = 0
 
   const scene2D = new THREE.Scene();

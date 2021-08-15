@@ -1,6 +1,7 @@
-import { createText, pixiloader, soundPlayer } from ".."
+import { pixiloader, soundPlayer } from ".."
 import * as PIXI from 'pixi.js'
 import SoundType from "../sound/SoundType"
+import Helpers from "../util/Helpers"
 
 export default class Button {
   public container: PIXI.Container
@@ -35,7 +36,7 @@ export default class Button {
     bg.name = 'bg'
     this.container.addChild(bg)
 
-    let msg = createText(this.text)
+    let msg = Helpers.createText(this.text)
     msg.position.x = this.width / 2
     msg.position.y = this.height / 2 + 1
     msg.anchor.set(0.5, 0.5)

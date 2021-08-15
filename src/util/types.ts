@@ -1,3 +1,5 @@
+import BlockItem from "../world/BlockItem"
+
 export interface ISoundDefinition {
   sounds: string[] | {
     name: string,
@@ -71,3 +73,12 @@ export interface IChunkGeoData {
 }
 export type IChunk = Uint8Array
 export type IChunks = Map<string, IChunk>
+
+export interface IStats  {
+  placed: {
+    [key: string]: { item: BlockItem, count: number }
+  },
+  broken: {
+    [key: string]: { item: BlockItem, count: number }
+  }
+}
