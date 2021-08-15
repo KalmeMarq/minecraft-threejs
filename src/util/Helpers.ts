@@ -65,6 +65,8 @@ export default class Helpers {
           cullface: value.cullface ?? false
         }
 
+        console.log(tex, blockAtlas.blocksUVInfo)
+        
         let t = blockAtlas.blocksUVInfo.get(tex)
         if(!t) throw new Error(tex + ' not found')
 

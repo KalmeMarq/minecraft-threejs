@@ -175,14 +175,10 @@ export function resetWorld() {
 
 ;(async() => {
   let imgs: string[] = await (await fetch('assets/textures.json')).json()
-  console.log(imgs);
-  return
 
   PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST
   PIXI.settings.RESOLUTION = window.devicePixelRatio
   PIXI.settings.ROUND_PIXELS = false;
-
-
 
 
   pixiRoot.scale.set(3, 3)
