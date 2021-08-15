@@ -1,5 +1,5 @@
 import Block from "./Block"
-import SoundType from "./sound/SoundType"
+import SoundType from "../sound/SoundType"
 
 export default class Blocks {
   public static BEDROCK: Block
@@ -65,7 +65,7 @@ export default class Blocks {
   public static WHITE_TERRACOTTA: Block
   public static YELLOW_TERRACOTTA: Block
   public static SAND: Block
-
+  public static GRASS_BLOCK: Block
 
   private static _init = (() => {
     Blocks.BEDROCK = new Block(1, 'bedrock', SoundType.NETHERRACK)
@@ -131,5 +131,6 @@ export default class Blocks {
     Blocks.WHITE_TERRACOTTA = new Block(61, 'white_terracotta', SoundType.STONE)
     Blocks.YELLOW_TERRACOTTA = new Block(62, 'yellow_terracotta', SoundType.STONE)
     Blocks.SAND = new Block(63, 'sand', SoundType.SAND)
+    Blocks.GRASS_BLOCK = new Block(64, 'grass_block', SoundType.GRASS)
   })()
 }

@@ -7,6 +7,7 @@ export default class SoundType {
   public static STONE: SoundType
   public static WOOL: SoundType
   public static SAND: SoundType
+  public static UICLICK: SoundType
 
   public volume: number
   public location: string
@@ -25,6 +26,7 @@ export default class SoundType {
     SoundType.WOOD = new SoundType(0.2, 'block.wood.break', new Sound('block.wood.break'), new Sound('block.wood.place'))
     SoundType.STONE = new SoundType(0.2, 'block.stone.break', new Sound('block.stone.break'), new Sound('block.stone.place'))
     SoundType.WOOL = new SoundType(0.2, 'block.wool.break', new Sound('block.wool.break'), new Sound('block.wool.place'))
-    SoundType.SAND = new SoundType(0.2, 'block.sand.break', new Sound('block.sand.break'), new Sound('block.sand.place'))
+    SoundType.SAND = new SoundType(0.2, 'ui.button.click', new Sound('block.sand.break'), new Sound('block.sand.place'))
+    SoundType.UICLICK = new SoundType(0.2, 'ui.button.click', new Sound('ui.button.click'), new Sound('ui.button.click'))
   })()
 }

@@ -1,12 +1,12 @@
-import { IChunk, IChunkGeoData, IFinalModel } from "./types";
+import { IChunk, IChunkGeoData, IFinalModel } from "../util/types";
 import * as THREE from 'three'
-import { blocksModelsNew, camera, renderer, scene, world } from ".";
+import { blocksModelsNew, camera, renderer, scene, world } from "..";
 
 export default class VoxelWorld {
   public chunkHeight: number
   public chunkSize: number
   public chunkSliceSize: number
-  public chunks: Map<string, IChunk>
+  public chunks: { [key: string]: IChunk }
   public box: any
   public lookingBlock: number[] | null = null
   public chunkIdToMesh: any = {};
@@ -16,12 +16,12 @@ export default class VoxelWorld {
     this.chunkHeight = options.chunkHeight
     this.chunkSize = options.chunkSize
     this.chunkSliceSize = this.chunkSize * this.chunkSize
-    this.chunks = new Map()
-
+    this.chunks = {}
     this.material = new THREE.MeshLambertMaterial({
       map: options.texture,
       side: THREE.DoubleSide,
       alphaTest: 0.1,
+      vertexColors: true,
       transparent: true
     });
 
@@ -34,6 +34,12 @@ export default class VoxelWorld {
     this.box = box
     scene.add(box)
   }
+
+  public clear() {
+    scene.remove(this.box)
+    this.chunks = {}
+    this.chunkIdToMesh = {}
+  } 
 
   public computeChunkId(x: number, z: number): string {
     const chunkX = Math.floor(x / this.chunkSize)
@@ -53,7 +59,7 @@ export default class VoxelWorld {
 
   public getChunkForVoxel(x: number, z: number): any {
     let name = this.computeChunkId(x, z)
-    let chunk = this.chunks.get(name)
+    let chunk = this.chunks[name]
     return chunk
   }
 
@@ -76,11 +82,11 @@ export default class VoxelWorld {
 
   public addChunkForVoxel(x: number, z: number): any {
     const chunkId = this.computeChunkId(x, z)
-    let chunk = this.chunks.get(chunkId)
+    let chunk = this.chunks[chunkId]
 
     if(chunk === undefined) {
       chunk = new Uint8Array(this.chunkSize * this.chunkHeight * this.chunkSize)
-      this.chunks.set(chunkId, chunk)
+      this.chunks[chunkId] = chunk
     }
 
     return chunk
@@ -98,6 +104,7 @@ export default class VoxelWorld {
     const positions: number[] = []
     const normals: number[] = []
     const uvs: number[] = []
+    const colors: number[] = []
     const indices: number[] = []
     
     const startX = chunkX * this.chunkSize
@@ -121,48 +128,54 @@ export default class VoxelWorld {
             for(let i = 0; i < model.elements.length; i++) {
               let element = model.elements[i]
 
-              Object.entries(element.faces).forEach(([type, { cullface, uv, pos, dir}]) => {
+              Object.entries(element.faces).forEach(([type, { cullface, uv, pos, dir, tint}]) => {
                 
                 const neighbor = this.getVoxel(voxelX + dir[0], voxelY + dir[1], voxelZ + dir[2])
 
                 if(!(neighbor && cullface)) {
                   const ndx = positions.length / 3;
 
+                  let color = [1, 1, 1]
+                  if(tint) color = [0.486, 0.752, 0.341]
+                  if(tint && voxelX > 4 && voxelZ > 6) {
+                    color = [0.650,0.721, 0.403]
+                  }         
+
                   switch(type) {
                     case 'west':
-                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2])
-                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3])
-                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2])
-                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3])
+                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2]); colors.push(...color)
+                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3]); colors.push(...color)
+                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2]); colors.push(...color)
+                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3]); colors.push(...color)
                     case 'east':
-                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2])
-                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3])
-                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2])
-                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3])
+                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2]); colors.push(...color)
+                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3]); colors.push(...color)
+                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2]); colors.push(...color)
+                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3]); colors.push(...color)
                       break;
                     case 'north':
-                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2])
-                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2])
-                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3])
-                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3])
+                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2]); colors.push(...color)
+                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2]); colors.push(...color)
+                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3]); colors.push(...color)
+                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3]); colors.push(...color)
                       break;
                     case 'south':
-                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3])
-                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3])
-                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2])
-                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2])
+                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3]); colors.push(...color)
+                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3]); colors.push(...color)
+                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2]); colors.push(...color)
+                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2]); colors.push(...color)
                       break;
                     case 'down':
-                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3])
-                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3])
-                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2])
-                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2])
+                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3]); colors.push(...color)
+                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3]); colors.push(...color)
+                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2]); colors.push(...color)
+                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2]); colors.push(...color)
                       break;
                     case 'up':
-                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2])
-                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2])
-                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3])
-                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3])
+                      positions.push(pos[0][0] + x, pos[0][1] + y, pos[0][2] + z); normals.push(...dir); uvs.push(uv[1], uv[2]); colors.push(...color)
+                      positions.push(pos[1][0] + x, pos[1][1] + y, pos[1][2] + z); normals.push(...dir); uvs.push(uv[0], uv[2]); colors.push(...color)
+                      positions.push(pos[2][0] + x, pos[2][1] + y, pos[2][2] + z); normals.push(...dir); uvs.push(uv[1], uv[3]); colors.push(...color)
+                      positions.push(pos[3][0] + x, pos[3][1] + y, pos[3][2] + z); normals.push(...dir); uvs.push(uv[0], uv[3]); colors.push(...color)
                       break;
                     default:
                       throw new Error("This face doesn't exist bro")
@@ -184,7 +197,8 @@ export default class VoxelWorld {
       positions,
       normals,
       uvs,
-      indices
+      indices,
+      colors
     }
   }
 
@@ -227,16 +241,16 @@ export default class VoxelWorld {
     const chunkX = Math.floor(x / world.chunkSize);
     const chunkZ = Math.floor(z / world.chunkSize);
     const chunkId = world.computeChunkId(x, z);
-    console.log(chunkId);
+
+    let mesh: THREE.Mesh | undefined = this.chunkIdToMesh[chunkId];
+    const geometry = mesh ? mesh.geometry : new THREE.BufferGeometry();
     
 
-    let mesh = this.chunkIdToMesh[chunkId];
-    const geometry = mesh ? mesh.geometry : new THREE.BufferGeometry();
-
-    const {positions, normals, uvs, indices} = world.generateGeometryDataForChunk(chunkX, chunkZ);
+    const {positions, normals, uvs, indices, colors} = world.generateGeometryDataForChunk(chunkX, chunkZ);
     const positionNumComponents = 3;
     geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), positionNumComponents));
     const normalNumComponents = 3;
+    geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
     geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), normalNumComponents));
     const uvNumComponents = 2;
     geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), uvNumComponents));

@@ -1,8 +1,8 @@
 import * as THREE from 'three'
-import { renderer, camera, world } from "."
+import { renderer, camera, world, stats } from ".."
 import Block from "./Block"
-import InteractionResult from "./InteractionResult"
-import SoundPlayer from "./sound/SoundPlayer"
+import InteractionResult from "../util/InteractionResult"
+import SoundPlayer from "../sound/SoundPlayer"
 
 export default class BlockItem {
   block: Block
@@ -59,6 +59,17 @@ export default class BlockItem {
       world.updateVoxelGeometry(pos[0], pos[1], pos[2]);
       world.selection()
       soundPlayer.playSound(this.block.sound.soundPlace)
+
+
+      if(!stats.placed[this.block.name]) {
+        stats.placed[this.block.name] = {
+          item: this,
+          count: 1
+        }
+      } else {
+        stats.placed[this.block.name].count += 1
+      }
+
       return InteractionResult.SUCCESS
     } else {
       return InteractionResult.FAIL

@@ -13,6 +13,7 @@ export interface ISoundDefinitions {
 export interface IModelFace {
   uv: [number, number, number, number]
   texture: string
+  tint?: boolean
   cullface: boolean
 }
 
@@ -41,6 +42,7 @@ export interface IFinalModelFace {
     [number, number, number],
     [number, number, number],
   ]
+  tint?: boolean
   dir: [number, number, number],
   cullface: boolean
 }
@@ -64,6 +66,7 @@ export interface IChunkGeoData {
   positions: number[]
   normals: number[]
   uvs: number[]
+  colors: number[]
   indices: number[]
 }
 export type IChunk = Uint8Array

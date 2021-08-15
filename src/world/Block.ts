@@ -1,4 +1,4 @@
-import SoundType from "./sound/SoundType"
+import SoundType from "../sound/SoundType"
 
 export default class Block {
   public name: string

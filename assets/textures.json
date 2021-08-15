@@ -43,7 +43,6 @@
   "tnt_top",
   "torch",
   "dirt",
-  "stone",
   "oak_planks",
   "spruce_planks",
   "birch_planks",
@@ -70,5 +69,8 @@
   "red_terracotta",
   "white_terracotta",
   "yellow_terracotta",
-  "sand"
+  "sand",
+  "grass_block_side",
+  "grass_block_side_overlay",
+  "grass_block_top"
 ]

@@ -65,6 +65,7 @@ export default class Items {
   public static WHITE_TERRACOTTA: BlockItem
   public static YELLOW_TERRACOTTA: BlockItem
   public static SAND: BlockItem
+  public static GRASS_BLOCK: BlockItem
 
   private static _init = (() => {
     Items.BEDROCK = new BlockItem(Blocks.BEDROCK, 'assets/textures/block/bedrock.png')
@@ -130,5 +131,6 @@ export default class Items {
     Items.WHITE_TERRACOTTA = new BlockItem(Blocks.WHITE_TERRACOTTA, 'assets/textures/block/white_terracotta.png')
     Items.YELLOW_TERRACOTTA = new BlockItem(Blocks.YELLOW_TERRACOTTA, 'assets/textures/block/yellow_terracotta.png')
     Items.SAND = new BlockItem(Blocks.SAND, 'assets/textures/block/sand.png')
+    Items.GRASS_BLOCK = new BlockItem(Blocks.GRASS_BLOCK, 'assets/textures/block/grass_block_side.png')
   })()
 }

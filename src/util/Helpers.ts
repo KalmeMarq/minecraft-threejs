@@ -1,4 +1,4 @@
-import BlockAtlas from "./BlockAtlas"
+import BlockAtlas from "../BlockAtlas"
 import { IFinalModel, IModel } from "./types"
 
 export default class Helpers {
@@ -60,6 +60,7 @@ export default class Helpers {
           uv: [],
           pos: [],
           // uvs: [],
+          tint: value.tint ?? false,
           dir: [0, 0, 0],
           cullface: value.cullface ?? false
         }

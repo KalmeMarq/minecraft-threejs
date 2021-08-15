@@ -1,4 +1,4 @@
-import { ISoundDefinitions } from "../types"
+import { ISoundDefinitions } from "../util/types"
 import Sound from "./Sound"
 import SoundType from "./SoundType"
 
