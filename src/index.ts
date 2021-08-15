@@ -176,7 +176,7 @@ export function resetWorld() {
 ;(async() => {
   let imgs: string[] = await (await fetch('assets/textures.json')).json()
   console.log(imgs);
-  
+  return
 
   PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST
   PIXI.settings.RESOLUTION = window.devicePixelRatio
@@ -306,7 +306,7 @@ export function resetWorld() {
 
   pixiRoot.addChild(debugOverlay)
   gui = new IngameGui()
-  pixiRoot.addChild(gui.container)
+  // if(gui) pixiRoot.addChild(gui.container)
   setScreen(new IngameMenuScreen())
   // setScreen(new LoadingScreen())
 
